@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 type BlogPost = {
   id: number;
@@ -46,23 +46,70 @@ const samplePosts: BlogPost[] = [
 
 export default function PostDetailPage() {
   const params = useParams();
+  const router = useRouter();
+
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [isUserPost, setIsUserPost] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedPosts: BlogPost[] = JSON.parse(
-      localStorage.getItem("projecthub-posts") || "[]"
-    );
+    try {
+      const savedPosts: BlogPost[] = JSON.parse(
+        localStorage.getItem("projecthub-posts") || "[]"
+      );
 
-    const allPosts = [...savedPosts, ...samplePosts];
+      const userPost = savedPosts.find(
+        (item) => String(item.id) === String(params.id)
+      );
 
-    const selectedPost = allPosts.find(
-      (item) => String(item.id) === String(params.id)
-    );
+      if (userPost) {
+        setPost(userPost);
+        setIsUserPost(true);
+      } else {
+        const samplePost = samplePosts.find(
+          (item) => String(item.id) === String(params.id)
+        );
 
-    setPost(selectedPost || null);
+        setPost(samplePost || null);
+        setIsUserPost(false);
+      }
+    } catch {
+      setPost(null);
+      setIsUserPost(false);
+    }
+
     setLoading(false);
   }, [params.id]);
+
+  function handleDelete() {
+    if (!post || !isUserPost) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this post? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const savedPosts: BlogPost[] = JSON.parse(
+        localStorage.getItem("projecthub-posts") || "[]"
+      );
+
+      const updatedPosts = savedPosts.filter(
+        (item) => String(item.id) !== String(post.id)
+      );
+
+      localStorage.setItem(
+        "projecthub-posts",
+        JSON.stringify(updatedPosts)
+      );
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      window.alert("Unable to delete the post. Please try again.");
+    }
+  }
 
   if (loading) {
     return <main className="p-8">Loading post...</main>;
@@ -105,6 +152,25 @@ export default function PostDetailPage() {
         <p className="mt-8 text-sm text-gray-400">
           Posted: {new Date(post.createdAt).toLocaleDateString()}
         </p>
+
+        {isUserPost && (
+          <div className="mt-8 flex flex-wrap gap-3 border-t pt-5">
+            <Link
+              href={`/posts/${post.id}/edit`}
+              className="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+            >
+              Edit Post
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+            >
+              Delete Post
+            </button>
+          </div>
+        )}
       </article>
     </main>
   );
