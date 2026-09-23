@@ -3,6 +3,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type BlogPost = {
   id: number;
@@ -54,16 +55,16 @@ export default function NewPostPage() {
     <main className="min-h-screen bg-[#f7f9fc] text-slate-800">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-5 sm:px-8">
-          <a href="/" className="text-xl font-bold tracking-tight">
+          <Link href="/" className="text-xl font-bold tracking-tight">
             Project<span className="text-indigo-600">Hub</span>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/"
             className="text-sm font-medium text-slate-600 hover:text-indigo-600"
           >
             ← Back to posts
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -177,12 +178,12 @@ export default function NewPostPage() {
           )}
 
           <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">
-            <a
+            <Link
               href="/"
               className="rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
               Cancel
-            </a>
+            </Link>
             <button
               type="submit"
               className="rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"

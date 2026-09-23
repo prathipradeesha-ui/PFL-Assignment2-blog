@@ -33,27 +33,31 @@ export default function EditPostPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const savedPosts: BlogPost[] = JSON.parse(
-        localStorage.getItem("projecthub-posts") || "[]"
-      );
+    const loadPost = () => {
+      try {
+        const savedPosts: BlogPost[] = JSON.parse(
+          localStorage.getItem("projecthub-posts") || "[]"
+        );
 
-      const foundPost = savedPosts.find(
-        (item) => String(item.id) === String(params.id)
-      );
+        const foundPost = savedPosts.find(
+          (item) => String(item.id) === String(params.id)
+        );
 
-      if (foundPost) {
-        setPost(foundPost);
-        setTitle(foundPost.title);
-        setAuthor(foundPost.author);
-        setDescription(foundPost.description);
-        setTag(foundPost.tag);
+        if (foundPost) {
+          setPost(foundPost);
+          setTitle(foundPost.title);
+          setAuthor(foundPost.author);
+          setDescription(foundPost.description);
+          setTag(foundPost.tag);
+        }
+      } catch {
+        setError("Could not load the saved post. Please try again.");
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      setError("Could not load the saved post. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    queueMicrotask(loadPost);
   }, [params.id]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
