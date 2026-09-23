@@ -13,7 +13,10 @@ type BlogPost = {
   author: string;
   tag: string;
   createdAt: string;
+  coverImage?: string;
 };
+
+type SortOption = "newest" | "oldest" | "title";
 
 const samplePosts: BlogPost[] = [
   {
@@ -24,6 +27,8 @@ const samplePosts: BlogPost[] = [
     author: "GreenTech Students",
     tag: "Sustainability",
     createdAt: "2026-09-22T10:00:00.000Z",
+    coverImage:
+      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=900&q=80",
   },
   {
     id: 2,
@@ -33,6 +38,8 @@ const samplePosts: BlogPost[] = [
     author: "Nexus Computing",
     tag: "Artificial Intelligence",
     createdAt: "2026-09-20T10:00:00.000Z",
+    coverImage:
+      "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80",
   },
   {
     id: 3,
@@ -42,16 +49,21 @@ const samplePosts: BlogPost[] = [
     author: "RetailPlus Team",
     tag: "Web Development",
     createdAt: "2026-09-18T10:00:00.000Z",
+    coverImage:
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=80",
   },
 ];
+
+const fallbackCover =
+  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80";
 
 export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("All Tags");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [posts, setPosts] = useState<BlogPost[]>(samplePosts);
   const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([]);
 
-  // Load user-created posts from localStorage.
   useEffect(() => {
     const loadSavedPosts = () => {
       try {
@@ -80,7 +92,6 @@ export default function Home() {
     queueMicrotask(loadSavedPosts);
   }, []);
 
-  // Load bookmarks from localStorage.
   useEffect(() => {
     queueMicrotask(() => {
       setBookmarkedIds(getBookmarks());
@@ -92,19 +103,38 @@ export default function Home() {
     ...Array.from(new Set(posts.map((post) => post.tag))),
   ];
 
-  const filteredPosts = useMemo(() => {
-    return filterPosts(
+  const sortedAndFilteredPosts = useMemo(() => {
+    const filtered = filterPosts(
       posts,
       search,
       selectedTag === "All Tags" ? "All" : selectedTag
     );
-  }, [posts, search, selectedTag]);
 
-  const latestPosts = filteredPosts.slice(0, 3);
+    return [...filtered].sort((a, b) => {
+      if (sortOption === "oldest") {
+        return (
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+        );
+      }
+
+      if (sortOption === "title") {
+        return a.title.localeCompare(b.title);
+      }
+
+      return (
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+      );
+    });
+  }, [posts, search, selectedTag, sortOption]);
+
+  const latestPosts = sortedAndFilteredPosts.slice(0, 3);
 
   function clearFilters() {
     setSearch("");
     setSelectedTag("All Tags");
+    setSortOption("newest");
   }
 
   function handleBookmark(postId: number) {
@@ -138,9 +168,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-slate-800">
-      {/* Top navigation */}
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
               <svg
@@ -174,17 +203,11 @@ export default function Home() {
             <span className="hidden text-sm text-slate-500 sm:block">
               Student Project Community
             </span>
-
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
-              PH
-            </div>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
-        {/* Page heading */}
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">
@@ -218,12 +241,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Search and tag filters */}
         <section
-          aria-label="Search and filter posts"
+          aria-label="Search, filter and sort posts"
           className="mb-7 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
         >
-          <div className="grid gap-3 md:grid-cols-[1fr_230px_auto]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_200px_200px_auto]">
             <label className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 bg-white px-3.5 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100">
               <svg
                 viewBox="0 0 24 24"
@@ -264,22 +286,42 @@ export default function Home() {
               </select>
             </label>
 
+            <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3.5">
+              <span className="shrink-0 text-sm text-slate-500">Sort</span>
+
+              <select
+                value={sortOption}
+                onChange={(event) =>
+                  setSortOption(event.target.value as SortOption)
+                }
+                aria-label="Sort project posts"
+                className="h-11 min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="title">Title A–Z</option>
+              </select>
+            </label>
+
             <button
               type="button"
               onClick={clearFilters}
               className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
             >
-              Clear filters
+              Clear
             </button>
           </div>
         </section>
 
-        {/* Latest posts */}
         <section id="latest-posts">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
-                Latest posts
+                {sortOption === "newest"
+                  ? "Latest posts"
+                  : sortOption === "oldest"
+                    ? "Oldest posts"
+                    : "Projects A–Z"}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
@@ -301,27 +343,26 @@ export default function Home() {
                 return (
                   <article
                     key={post.id}
-                    className="flex min-h-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+                    className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
                   >
-                    <div className="flex-1 p-5 sm:p-6">
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.7"
-                              className="h-4 w-4"
-                              aria-hidden="true"
-                            >
-                              <path d="M4 20V8l8-4 8 4v12" />
-                              <path d="M2 20h20M9 20v-6h6v6M8 9h.01M12 9h.01M16 9h.01" />
-                            </svg>
-                          </span>
+                    <Link
+                      href={`/posts/${post.id}`}
+                      className="block overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                      aria-label={`View ${post.title}`}
+                    >
+                      <img
+                        src={post.coverImage || fallbackCover}
+                        alt={`Cover for ${post.title}`}
+                        className="h-44 w-full object-cover transition duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                    </Link>
 
-                          <span className="truncate">{post.author}</span>
-                        </div>
+                    <div className="flex flex-1 flex-col p-5 sm:p-6">
+                      <div className="mb-4 flex items-start justify-between gap-3">
+                        <span className="rounded-md bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700">
+                          {post.tag}
+                        </span>
 
                         <button
                           type="button"
@@ -350,20 +391,11 @@ export default function Home() {
                         </p>
                       </Link>
 
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <span className="rounded-md bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700">
-                          {post.tag}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="mt-auto flex items-center justify-between gap-3 pt-5">
                         <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-600 ring-1 ring-slate-200">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
                             {getInitials(post.author)}
                           </span>
-
                           <span className="truncate">{post.author}</span>
                         </div>
 
