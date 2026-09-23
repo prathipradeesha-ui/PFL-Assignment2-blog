@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { filterPosts } from "@/lib/filterPosts";
+import { getBookmarks, toggleBookmark } from "@/lib/bookmarks";
 
 type BlogPost = {
   id: number;
@@ -48,6 +49,7 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("All Tags");
   const [posts, setPosts] = useState<BlogPost[]>(samplePosts);
+  const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([]);
 
   // Load user-created posts from localStorage.
   useEffect(() => {
@@ -62,7 +64,6 @@ export default function Home() {
         if (Array.isArray(parsedPosts)) {
           const combinedPosts = [...parsedPosts, ...samplePosts];
 
-          // Display newest posts first.
           combinedPosts.sort(
             (a, b) =>
               new Date(b.createdAt).getTime() -
@@ -79,13 +80,18 @@ export default function Home() {
     queueMicrotask(loadSavedPosts);
   }, []);
 
-  // Create the available tag options.
+  // Load bookmarks from localStorage.
+  useEffect(() => {
+    queueMicrotask(() => {
+      setBookmarkedIds(getBookmarks());
+    });
+  }, []);
+
   const allTags = [
     "All Tags",
     ...Array.from(new Set(posts.map((post) => post.tag))),
   ];
 
-  // Use the tested filtering function.
   const filteredPosts = useMemo(() => {
     return filterPosts(
       posts,
@@ -94,12 +100,16 @@ export default function Home() {
     );
   }, [posts, search, selectedTag]);
 
-  // Show up to three newest matching posts.
   const latestPosts = filteredPosts.slice(0, 3);
 
   function clearFilters() {
     setSearch("");
     setSelectedTag("All Tags");
+  }
+
+  function handleBookmark(postId: number) {
+    const updatedBookmarks = toggleBookmark(postId);
+    setBookmarkedIds(updatedBookmarks);
   }
 
   function formatDate(dateString: string) {
@@ -153,7 +163,14 @@ export default function Home() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/saved"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+            >
+              Saved Posts ({bookmarkedIds.length})
+            </Link>
+
             <span className="hidden text-sm text-slate-500 sm:block">
               Student Project Community
             </span>
@@ -231,9 +248,7 @@ export default function Home() {
             </label>
 
             <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-3.5">
-              <span className="shrink-0 text-sm text-slate-500">
-                Tag
-              </span>
+              <span className="shrink-0 text-sm text-slate-500">Tag</span>
 
               <select
                 value={selectedTag}
@@ -278,16 +293,16 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Clickable post cards */}
           {latestPosts.length > 0 ? (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {latestPosts.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/posts/${post.id}`}
-                  className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                >
-                  <article className="flex min-h-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+              {latestPosts.map((post) => {
+                const isSaved = bookmarkedIds.includes(post.id);
+
+                return (
+                  <article
+                    key={post.id}
+                    className="flex min-h-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+                  >
                     <div className="flex-1 p-5 sm:p-6">
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
@@ -308,18 +323,32 @@ export default function Home() {
                           <span className="truncate">{post.author}</span>
                         </div>
 
-                        <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                          Recent
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleBookmark(post.id)}
+                          aria-pressed={isSaved}
+                          className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                            isSaved
+                              ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                          }`}
+                        >
+                          {isSaved ? "★ Saved" : "☆ Save"}
+                        </button>
                       </div>
 
-                      <h3 className="text-xl font-bold leading-snug text-slate-900">
-                        {post.title}
-                      </h3>
+                      <Link
+                        href={`/posts/${post.id}`}
+                        className="block rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                      >
+                        <h3 className="text-xl font-bold leading-snug text-slate-900">
+                          {post.title}
+                        </h3>
 
-                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
-                        {post.description}
-                      </p>
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                          {post.description}
+                        </p>
+                      </Link>
 
                       <div className="mt-5 flex flex-wrap gap-2">
                         <span className="rounded-md bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700">
@@ -328,7 +357,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Card footer */}
                     <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
@@ -345,8 +373,8 @@ export default function Home() {
                       </div>
                     </div>
                   </article>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
@@ -369,7 +397,6 @@ export default function Home() {
           )}
         </section>
 
-        {/* Footer */}
         <footer className="mt-12 border-t border-slate-200 pt-5 text-center text-xs text-slate-400">
           ProjectHub · A project-sharing blog for Software Engineering students
         </footer>

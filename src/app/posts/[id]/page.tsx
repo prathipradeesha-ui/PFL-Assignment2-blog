@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { isBookmarked, toggleBookmark } from "@/lib/bookmarks";
 
 type BlogPost = {
   id: number;
@@ -51,6 +52,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [isUserPost, setIsUserPost] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
     const loadPost = () => {
@@ -63,20 +65,23 @@ export default function PostDetailPage() {
           (item) => String(item.id) === String(params.id)
         );
 
-        if (userPost) {
-          setPost(userPost);
-          setIsUserPost(true);
-        } else {
-          const samplePost = samplePosts.find(
+        const foundPost =
+          userPost ||
+          samplePosts.find(
             (item) => String(item.id) === String(params.id)
-          );
+          ) ||
+          null;
 
-          setPost(samplePost || null);
-          setIsUserPost(false);
+        setPost(foundPost);
+        setIsUserPost(Boolean(userPost));
+
+        if (foundPost) {
+          setBookmarked(isBookmarked(foundPost.id));
         }
       } catch {
         setPost(null);
         setIsUserPost(false);
+        setBookmarked(false);
       } finally {
         setLoading(false);
       }
@@ -84,6 +89,13 @@ export default function PostDetailPage() {
 
     queueMicrotask(loadPost);
   }, [params.id]);
+
+  function handleBookmark() {
+    if (!post) return;
+
+    const updatedBookmarks = toggleBookmark(post.id);
+    setBookmarked(updatedBookmarks.includes(post.id));
+  }
 
   function handleDelete() {
     if (!post || !isUserPost) {
@@ -149,12 +161,21 @@ export default function PostDetailPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
       <div className="mx-auto max-w-3xl">
-        <Link
-          href="/"
-          className="font-semibold text-indigo-700 hover:underline"
-        >
-          ← Back to homepage
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link
+            href="/"
+            className="font-semibold text-indigo-700 hover:underline"
+          >
+            ← Back to homepage
+          </Link>
+
+          <Link
+            href="/saved"
+            className="font-semibold text-indigo-700 hover:underline"
+          >
+            View Saved Posts →
+          </Link>
+        </div>
 
         <article className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -177,6 +198,21 @@ export default function PostDetailPage() {
               {post.author}
             </span>
           </p>
+
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handleBookmark}
+              aria-pressed={bookmarked}
+              className={`rounded-lg px-5 py-3 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                bookmarked
+                  ? "border border-indigo-200 bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {bookmarked ? "★ Saved" : "☆ Save Post"}
+            </button>
+          </div>
 
           <div className="mt-8 border-t border-slate-200 pt-6">
             <h2 className="text-lg font-bold text-slate-900">
