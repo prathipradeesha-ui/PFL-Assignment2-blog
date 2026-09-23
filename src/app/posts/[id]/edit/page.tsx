@@ -17,12 +17,12 @@ type BlogPost = {
 const fieldClass =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 placeholder:text-slate-500 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-200";
 
-const labelClass =
-  "mb-2 block text-sm font-semibold text-slate-800";
+const labelClass = "mb-2 block text-sm font-semibold text-slate-800";
 
 export default function EditPostPage() {
   const params = useParams();
   const router = useRouter();
+  const postId = String(params.id);
 
   const [post, setPost] = useState<BlogPost | null>(null);
   const [title, setTitle] = useState("");
@@ -31,36 +31,43 @@ export default function EditPostPage() {
   const [tag, setTag] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const loadPost = () => {
+    async function loadPost() {
       try {
-        const savedPosts: BlogPost[] = JSON.parse(
-          localStorage.getItem("projecthub-posts") || "[]"
-        );
+        setLoading(true);
+        setError("");
 
-        const foundPost = savedPosts.find(
-          (item) => String(item.id) === String(params.id)
-        );
+        const response = await fetch(`/api/posts/${postId}`);
 
-        if (foundPost) {
-          setPost(foundPost);
-          setTitle(foundPost.title);
-          setAuthor(foundPost.author);
-          setDescription(foundPost.description);
-          setTag(foundPost.tag);
+        if (response.status === 404) {
+          setPost(null);
+          return;
         }
+
+        if (!response.ok) {
+          throw new Error("Unable to load the post.");
+        }
+
+        const foundPost: BlogPost = await response.json();
+
+        setPost(foundPost);
+        setTitle(foundPost.title);
+        setAuthor(foundPost.author);
+        setDescription(foundPost.description);
+        setTag(foundPost.tag);
       } catch {
-        setError("Could not load the saved post. Please try again.");
+        setError("Could not load the post. Please try again.");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    queueMicrotask(loadPost);
-  }, [params.id]);
+    loadPost();
+  }, [postId]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
@@ -80,31 +87,30 @@ export default function EditPostPage() {
     }
 
     try {
-      const savedPosts: BlogPost[] = JSON.parse(
-        localStorage.getItem("projecthub-posts") || "[]"
-      );
+      setIsSaving(true);
 
-      const updatedPosts = savedPosts.map((item) =>
-        item.id === post.id
-          ? {
-              ...item,
-              title: title.trim(),
-              author: author.trim(),
-              description: description.trim(),
-              tag: tag.trim(),
-            }
-          : item
-      );
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          author: author.trim(),
+          description: description.trim(),
+          tag: tag.trim(),
+        }),
+      });
 
-      localStorage.setItem(
-        "projecthub-posts",
-        JSON.stringify(updatedPosts)
-      );
+      if (!response.ok) {
+        throw new Error("Unable to save changes.");
+      }
 
       router.push(`/posts/${post.id}`);
       router.refresh();
     } catch {
       setError("Could not save your changes. Please try again.");
+      setIsSaving(false);
     }
   }
 
@@ -121,11 +127,9 @@ export default function EditPostPage() {
       <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
         <div className="mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white p-8">
           <h1 className="text-2xl font-bold">Post not found</h1>
-
           <p className="mt-3 text-slate-700">
             {error || "This post may have been removed or does not exist."}
           </p>
-
           <Link
             href="/"
             className="mt-5 inline-block font-semibold text-indigo-700 hover:underline"
@@ -170,7 +174,6 @@ export default function EditPostPage() {
               <label htmlFor="title" className={labelClass}>
                 Project title
               </label>
-
               <input
                 id="title"
                 value={title}
@@ -184,7 +187,6 @@ export default function EditPostPage() {
               <label htmlFor="author" className={labelClass}>
                 Author or team
               </label>
-
               <input
                 id="author"
                 value={author}
@@ -198,7 +200,6 @@ export default function EditPostPage() {
               <label htmlFor="description" className={labelClass}>
                 Project description
               </label>
-
               <textarea
                 id="description"
                 value={description}
@@ -213,7 +214,6 @@ export default function EditPostPage() {
               <label htmlFor="tag" className={labelClass}>
                 Project tag
               </label>
-
               <input
                 id="tag"
                 value={tag}
@@ -226,9 +226,10 @@ export default function EditPostPage() {
             <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-5">
               <button
                 type="submit"
-                className="rounded-lg bg-indigo-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                disabled={isSaving}
+                className="rounded-lg bg-indigo-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Changes
+                {isSaving ? "Saving..." : "Save Changes"}
               </button>
 
               <Link

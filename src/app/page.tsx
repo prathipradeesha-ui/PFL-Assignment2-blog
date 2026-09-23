@@ -18,41 +18,11 @@ type BlogPost = {
 
 type SortOption = "newest" | "oldest" | "title";
 
-const samplePosts: BlogPost[] = [
-  {
-    id: 1,
-    title: "EcoTrack: A Sustainable Campus",
-    description:
-      "A student project exploring how technology can help universities monitor energy use, reduce waste, and build greener campuses.",
-    author: "GreenTech Students",
-    tag: "Sustainability",
-    createdAt: "2026-09-22T10:00:00.000Z",
-    coverImage:
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: 2,
-    title: "AI Customer Support Assistant",
-    description:
-      "Building an intelligent chatbot to answer common student questions and help users find information more efficiently.",
-    author: "Nexus Computing",
-    tag: "Artificial Intelligence",
-    createdAt: "2026-09-20T10:00:00.000Z",
-    coverImage:
-      "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: 3,
-    title: "Student Expense Tracker",
-    description:
-      "A web application concept that helps students organise spending, track expenses, and understand their monthly budget.",
-    author: "RetailPlus Team",
-    tag: "Web Development",
-    createdAt: "2026-09-18T10:00:00.000Z",
-    coverImage:
-      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=80",
-  },
-];
+const coverImages: Record<number, string> = {
+  1: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=900&q=80",
+  2: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=900&q=80",
+  3: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=80",
+};
 
 const fallbackCover =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80";
@@ -61,37 +31,43 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("All Tags");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
-  const [posts, setPosts] = useState<BlogPost[]>(samplePosts);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Load posts from the API.
   useEffect(() => {
-    const loadSavedPosts = () => {
+    async function loadPosts() {
       try {
-        const savedPosts = localStorage.getItem("projecthub-posts");
+        setIsLoading(true);
+        setError("");
 
-        if (!savedPosts) return;
+        const response = await fetch("/api/posts");
 
-        const parsedPosts: BlogPost[] = JSON.parse(savedPosts);
-
-        if (Array.isArray(parsedPosts)) {
-          const combinedPosts = [...parsedPosts, ...samplePosts];
-
-          combinedPosts.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() -
-              new Date(a.createdAt).getTime()
-          );
-
-          setPosts(combinedPosts);
+        if (!response.ok) {
+          throw new Error("Failed to load posts.");
         }
-      } catch {
-        console.error("Could not read saved ProjectHub posts.");
-      }
-    };
 
-    queueMicrotask(loadSavedPosts);
+        const apiPosts: BlogPost[] = await response.json();
+
+        const postsWithCovers = apiPosts.map((post) => ({
+          ...post,
+          coverImage: post.coverImage || coverImages[post.id],
+        }));
+
+        setPosts(postsWithCovers);
+      } catch {
+        setError("Could not load posts. Please refresh the page.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPosts();
   }, []);
 
+  // Load bookmarks from localStorage.
   useEffect(() => {
     queueMicrotask(() => {
       setBookmarkedIds(getBookmarks());
@@ -335,7 +311,18 @@ export default function Home() {
             </span>
           </div>
 
-          {latestPosts.length > 0 ? (
+          {isLoading ? (
+            <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+              Loading posts...
+            </p>
+          ) : error ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-red-200 bg-white p-8 text-center text-red-600"
+            >
+              {error}
+            </p>
+          ) : latestPosts.length > 0 ? (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {latestPosts.map((post) => {
                 const isSaved = bookmarkedIds.includes(post.id);

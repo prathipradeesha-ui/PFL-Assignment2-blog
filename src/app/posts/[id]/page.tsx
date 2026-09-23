@@ -15,80 +15,47 @@ type BlogPost = {
   createdAt: string;
 };
 
-const samplePosts: BlogPost[] = [
-  {
-    id: 1,
-    title: "EcoTrack: A Sustainable Campus",
-    author: "GreenTech Students",
-    description:
-      "A project exploring ways to make the campus more sustainable through technology.",
-    tag: "Sustainability",
-    createdAt: "2026-09-22",
-  },
-  {
-    id: 2,
-    title: "AI Customer Support Assistant",
-    author: "Nexus Computing",
-    description:
-      "An AI-powered assistant designed to help answer customer questions.",
-    tag: "Artificial Intelligence",
-    createdAt: "2026-09-20",
-  },
-  {
-    id: 3,
-    title: "Student Expense Tracker",
-    author: "RetailPlus Team",
-    description:
-      "A web application that helps students record and manage their expenses.",
-    tag: "Web Development",
-    createdAt: "2026-09-18",
-  },
-];
-
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const postId = String(params.id);
 
   const [post, setPost] = useState<BlogPost | null>(null);
-  const [isUserPost, setIsUserPost] = useState(false);
   const [loading, setLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadPost = () => {
+    async function loadPost() {
       try {
-        const savedPosts: BlogPost[] = JSON.parse(
-          localStorage.getItem("projecthub-posts") || "[]"
-        );
+        setLoading(true);
+        setError("");
 
-        const userPost = savedPosts.find(
-          (item) => String(item.id) === String(params.id)
-        );
+        const response = await fetch(`/api/posts/${postId}`);
 
-        const foundPost =
-          userPost ||
-          samplePosts.find(
-            (item) => String(item.id) === String(params.id)
-          ) ||
-          null;
+        if (response.status === 404) {
+          setPost(null);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Unable to load this post.");
+        }
+
+        const foundPost: BlogPost = await response.json();
 
         setPost(foundPost);
-        setIsUserPost(Boolean(userPost));
-
-        if (foundPost) {
-          setBookmarked(isBookmarked(foundPost.id));
-        }
+        setBookmarked(isBookmarked(foundPost.id));
       } catch {
-        setPost(null);
-        setIsUserPost(false);
-        setBookmarked(false);
+        setError("Unable to load the post. Please try again.");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    queueMicrotask(loadPost);
-  }, [params.id]);
+    loadPost();
+  }, [postId]);
 
   function handleBookmark() {
     if (!post) return;
@@ -97,37 +64,32 @@ export default function PostDetailPage() {
     setBookmarked(updatedBookmarks.includes(post.id));
   }
 
-  function handleDelete() {
-    if (!post || !isUserPost) {
-      return;
-    }
+  async function handleDelete() {
+    if (!post || isDeleting) return;
 
     const confirmed = window.confirm(
       "Are you sure you want to delete this post? This action cannot be undone."
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
-      const savedPosts: BlogPost[] = JSON.parse(
-        localStorage.getItem("projecthub-posts") || "[]"
-      );
+      setIsDeleting(true);
+      setError("");
 
-      const updatedPosts = savedPosts.filter(
-        (item) => String(item.id) !== String(post.id)
-      );
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
 
-      localStorage.setItem(
-        "projecthub-posts",
-        JSON.stringify(updatedPosts)
-      );
+      if (!response.ok) {
+        throw new Error("Unable to delete the post.");
+      }
 
       router.push("/");
       router.refresh();
     } catch {
-      window.alert("Unable to delete the post. Please try again.");
+      setError("Unable to delete the post. Please try again.");
+      setIsDeleting(false);
     }
   }
 
@@ -139,15 +101,28 @@ export default function PostDetailPage() {
     );
   }
 
+  if (error && !post) {
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl bg-slate-50 p-8 text-slate-900">
+        <h1 className="text-2xl font-bold">Something went wrong</h1>
+        <p className="mt-3 text-red-700">{error}</p>
+        <Link
+          href="/"
+          className="mt-4 inline-block font-semibold text-indigo-700 hover:underline"
+        >
+          ← Back to homepage
+        </Link>
+      </main>
+    );
+  }
+
   if (!post) {
     return (
       <main className="mx-auto min-h-screen max-w-3xl bg-slate-50 p-8 text-slate-900">
         <h1 className="text-2xl font-bold">Post not found</h1>
-
         <p className="mt-3 text-slate-700">
           This post may have been removed or does not exist.
         </p>
-
         <Link
           href="/"
           className="mt-4 inline-block font-semibold text-indigo-700 hover:underline"
@@ -224,23 +199,28 @@ export default function PostDetailPage() {
             </p>
           </div>
 
-          {isUserPost && (
-            <div className="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6">
-              <Link
-                href={`/posts/${post.id}/edit`}
-                className="rounded-lg bg-indigo-700 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                Edit Post
-              </Link>
+          <div className="mt-8 flex flex-wrap gap-3 border-t border-slate-200 pt-6">
+            <Link
+              href={`/posts/${post.id}/edit`}
+              className="rounded-lg bg-indigo-700 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Edit Post
+            </Link>
 
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="rounded-lg border border-red-300 bg-white px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                Delete Post
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="rounded-lg border border-red-300 bg-white px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isDeleting ? "Deleting..." : "Delete Post"}
+            </button>
+          </div>
+
+          {error && (
+            <p role="alert" className="mt-4 text-sm font-medium text-red-700">
+              {error}
+            </p>
           )}
         </article>
       </div>

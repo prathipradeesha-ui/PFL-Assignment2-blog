@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "title": "EcoTrack",
+    "description": "A student project focused on tracking environmental impact.",
+    "author": "Student",
+    "tag": "Environment",
+    "createdAt": "2026-09-20T10:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "title": "AI Customer Support Assistant",
+    "description": "A student project exploring AI-powered customer support.",
+    "author": "Student",
+    "tag": "Artificial Intelligence",
+    "createdAt": "2026-09-19T10:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "title": "Student Expense Tracker",
+    "description": "A student project for recording and managing expenses.",
+    "author": "Student",
+    "tag": "Finance",
+    "createdAt": "2026-09-18T10:00:00.000Z"
+  }
+]

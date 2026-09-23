@@ -12,6 +12,7 @@ type BlogPost = {
   description: string;
   tag: string;
   createdAt: string;
+  coverImage?: string;
 };
 
 export default function NewPostPage() {
@@ -23,32 +24,63 @@ export default function NewPostPage() {
   const [tag, setTag] = useState("");
 
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!title.trim() || !author.trim() || !description.trim() || !tag) {
+    setError("");
+
+    if (
+      !title.trim() ||
+      !author.trim() ||
+      !description.trim() ||
+      !tag
+    ) {
       setError("Please complete all fields.");
       return;
     }
 
-    const newPost: BlogPost = {
-      id: Date.now(),
+    const newPost = {
       title: title.trim(),
       author: author.trim(),
       description: description.trim(),
       tag,
-      createdAt: new Date().toISOString(),
     };
 
-    const savedPosts = localStorage.getItem("projecthub-posts");
-    const posts: BlogPost[] = savedPosts ? JSON.parse(savedPosts) : [];
+    try {
+      setIsSaving(true);
 
-    posts.push(newPost);
-    localStorage.setItem("projecthub-posts", JSON.stringify(posts));
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newPost),
+      });
 
-    router.push("/");
-    router.refresh();
+      const result: BlogPost | { error?: string } = await response.json();
+
+      if (!response.ok) {
+        const message =
+          "error" in result && result.error
+            ? result.error
+            : "Could not save your post.";
+
+        throw new Error(message);
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -73,9 +105,11 @@ export default function NewPostPage() {
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">
             Share your idea
           </p>
+
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
             Create a project post
           </h1>
+
           <p className="mt-3 text-slate-500">
             Tell the student community what you are building or exploring.
           </p>
@@ -92,6 +126,7 @@ export default function NewPostPage() {
             >
               Post title
             </label>
+
             <input
               id="title"
               value={title}
@@ -110,6 +145,7 @@ export default function NewPostPage() {
             >
               Author or team name
             </label>
+
             <input
               id="author"
               value={author}
@@ -128,6 +164,7 @@ export default function NewPostPage() {
             >
               Project description
             </label>
+
             <textarea
               id="description"
               value={description}
@@ -138,6 +175,7 @@ export default function NewPostPage() {
               className="w-full resize-y rounded-lg border border-slate-200 px-4 py-3 text-sm leading-6 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               required
             />
+
             <p className="mt-1 text-right text-xs text-slate-400">
               {description.length}/2000 characters
             </p>
@@ -150,6 +188,7 @@ export default function NewPostPage() {
             >
               Project tag
             </label>
+
             <select
               id="tag"
               value={tag}
@@ -159,7 +198,9 @@ export default function NewPostPage() {
             >
               <option value="">Choose a tag</option>
               <option value="Web Development">Web Development</option>
-              <option value="Artificial Intelligence">Artificial Intelligence</option>
+              <option value="Artificial Intelligence">
+                Artificial Intelligence
+              </option>
               <option value="Internet of Things">Internet of Things</option>
               <option value="Sustainability">Sustainability</option>
               <option value="Cybersecurity">Cybersecurity</option>
@@ -184,11 +225,13 @@ export default function NewPostPage() {
             >
               Cancel
             </Link>
+
             <button
               type="submit"
-              className="rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              disabled={isSaving}
+              className="rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save post
+              {isSaving ? "Saving..." : "Save post"}
             </button>
           </div>
         </form>
