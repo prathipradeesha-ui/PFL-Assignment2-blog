@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { filterPosts } from "@/lib/filterPosts";
 
 type BlogPost = {
   id: number;
@@ -50,10 +51,12 @@ export default function Home() {
 
   // Load user-created posts from localStorage.
   useEffect(() => {
-    const savedPosts = localStorage.getItem("projecthub-posts");
-
-    if (savedPosts) {
+    const loadSavedPosts = () => {
       try {
+        const savedPosts = localStorage.getItem("projecthub-posts");
+
+        if (!savedPosts) return;
+
         const parsedPosts: BlogPost[] = JSON.parse(savedPosts);
 
         if (Array.isArray(parsedPosts)) {
@@ -71,28 +74,24 @@ export default function Home() {
       } catch {
         console.error("Could not read saved ProjectHub posts.");
       }
-    }
+    };
+
+    queueMicrotask(loadSavedPosts);
   }, []);
 
+  // Create the available tag options.
   const allTags = [
     "All Tags",
     ...Array.from(new Set(posts.map((post) => post.tag))),
   ];
 
+  // Use the tested filtering function.
   const filteredPosts = useMemo(() => {
-    return posts.filter((post) => {
-      const searchText = search.toLowerCase();
-
-      const matchesSearch =
-        post.title.toLowerCase().includes(searchText) ||
-        post.description.toLowerCase().includes(searchText) ||
-        post.author.toLowerCase().includes(searchText);
-
-      const matchesTag =
-        selectedTag === "All Tags" || post.tag === selectedTag;
-
-      return matchesSearch && matchesTag;
-    });
+    return filterPosts(
+      posts,
+      search,
+      selectedTag === "All Tags" ? "All" : selectedTag
+    );
   }, [posts, search, selectedTag]);
 
   // Show up to three newest matching posts.
