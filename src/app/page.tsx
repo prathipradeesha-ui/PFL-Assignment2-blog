@@ -1,6 +1,6 @@
-
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { filterPosts } from "@/lib/filterPosts";
@@ -337,12 +337,15 @@ export default function Home() {
                       className="block overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                       aria-label={`View ${post.title}`}
                     >
-                      <img
-                        src={post.coverImage || fallbackCover}
-                        alt={`Cover for ${post.title}`}
-                        className="h-44 w-full object-cover transition duration-300 hover:scale-105"
-                        loading="lazy"
-                      />
+                      <div className="relative h-44 w-full overflow-hidden">
+                        <Image
+                          src={post.coverImage || fallbackCover}
+                          alt={`Cover for ${post.title}`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                          className="object-cover transition duration-300 hover:scale-105"
+                        />
+                      </div>
                     </Link>
 
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
