@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,49 +13,17 @@ type BlogPost = {
   createdAt: string;
 };
 
-const samplePosts: BlogPost[] = [
-  {
-    id: 1,
-    title: "EcoTrack: A Sustainable Campus",
-    description:
-      "A student project exploring how technology can help universities monitor energy use, reduce waste, and build greener campuses.",
-    author: "GreenTech Students",
-    tag: "Sustainability",
-    createdAt: "2026-09-22T10:00:00.000Z",
-  },
-  {
-    id: 2,
-    title: "AI Customer Support Assistant",
-    description:
-      "Building an intelligent chatbot to answer common student questions and help users find information more efficiently.",
-    author: "Nexus Computing",
-    tag: "Artificial Intelligence",
-    createdAt: "2026-09-20T10:00:00.000Z",
-  },
-  {
-    id: 3,
-    title: "Student Expense Tracker",
-    description:
-      "A web application concept that helps students organise spending, track expenses, and understand their monthly budget.",
-    author: "RetailPlus Team",
-    tag: "Web Development",
-    createdAt: "2026-09-18T10:00:00.000Z",
-  },
-];
-
 export default function SavedPostsPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [bookmarkedIds, setBookmarkedIds] = useState<number[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    queueMicrotask(() => {
+    async function loadBookmarkedPosts() {
       try {
-        const savedPosts: BlogPost[] = JSON.parse(
-          localStorage.getItem("projecthub-posts") || "[]"
-        );
+        const response = await fetch("/api/posts");
+        const allPosts: BlogPost[] = await response.json();
 
-        const allPosts = [...savedPosts, ...samplePosts];
         const ids = getBookmarks();
 
         setBookmarkedIds(ids);
@@ -67,7 +34,9 @@ export default function SavedPostsPage() {
       } finally {
         setLoaded(true);
       }
-    });
+    }
+
+    loadBookmarkedPosts();
   }, []);
 
   function handleRemove(postId: number) {
