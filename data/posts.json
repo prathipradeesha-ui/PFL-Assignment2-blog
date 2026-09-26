@@ -3,7 +3,7 @@
     "id": 1,
     "title": "EcoTrack",
     "description": "A student project focused on tracking environmental impact.",
-    "author": "Student",
+    "author": "Prathi",
     "tag": "Environment",
     "createdAt": "2026-09-20T10:00:00.000Z"
   },
@@ -11,7 +11,7 @@
     "id": 2,
     "title": "AI Customer Support Assistant",
     "description": "A student project exploring AI-powered customer support.",
-    "author": "Student",
+    "author": "Tech Team",
     "tag": "Artificial Intelligence",
     "createdAt": "2026-09-19T10:00:00.000Z"
   },
@@ -22,5 +22,13 @@
     "author": "Student",
     "tag": "Finance",
     "createdAt": "2026-09-18T10:00:00.000Z"
+  },
+  {
+    "title": "Smart Traffic Management System",
+    "author": "TechVision Team",
+    "description": "A smart system that uses real-time traffic data to monitor road conditions and help improve traffic flow in busy areas.",
+    "tag": "Internet of Things",
+    "id": 1790397458866,
+    "createdAt": "2026-09-26T04:37:38.866Z"
   }
 ]
