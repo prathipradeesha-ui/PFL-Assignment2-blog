@@ -82,7 +82,7 @@ export default function SavedPostsPage() {
   if (!loaded) {
     return (
       <main className="min-h-screen bg-slate-50 p-8 text-slate-900">
-        <p>Loading saved posts...</p>
+        <p>Loading bookmarks...</p>
       </main>
     );
   }
@@ -95,7 +95,7 @@ export default function SavedPostsPage() {
             <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
               ProjectHub
             </p>
-            <h1 className="mt-2 text-3xl font-bold">Saved Posts</h1>
+            <h1 className="mt-2 text-3xl font-bold">Bookmarks</h1>
             <p className="mt-2 text-slate-600">
               Your bookmarked student projects.
             </p>
@@ -111,7 +111,7 @@ export default function SavedPostsPage() {
 
         {posts.length === 0 ? (
           <section className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-            <h2 className="text-xl font-semibold">No saved posts yet</h2>
+            <h2 className="text-xl font-semibold">No bookmarks yet</h2>
             <p className="mt-2 text-slate-600">
               Visit the homepage and select Save on a project you want to keep.
             </p>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { filterPosts } from "@/lib/filterPosts";
@@ -173,7 +172,7 @@ export default function Home() {
               href="/saved"
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
             >
-              Saved Posts ({bookmarkedIds.length})
+              Bookmarks ({bookmarkedIds.length})
             </Link>
 
             <span className="hidden text-sm text-slate-500 sm:block">
@@ -325,7 +324,7 @@ export default function Home() {
           ) : latestPosts.length > 0 ? (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {latestPosts.map((post) => {
-                const isSaved = bookmarkedIds.includes(post.id);
+                const isBookmarkedPost = bookmarkedIds.includes(post.id);
 
                 return (
                   <article
@@ -337,15 +336,12 @@ export default function Home() {
                       className="block overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                       aria-label={`View ${post.title}`}
                     >
-                      <div className="relative h-44 w-full overflow-hidden">
-                        <Image
-                          src={post.coverImage || fallbackCover}
-                          alt={`Cover for ${post.title}`}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                          className="object-cover transition duration-300 hover:scale-105"
-                        />
-                      </div>
+                      <img
+                        src={post.coverImage || fallbackCover}
+                        alt={`Cover for ${post.title}`}
+                        className="h-44 w-full object-cover transition duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
                     </Link>
 
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
@@ -357,14 +353,16 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => handleBookmark(post.id)}
-                          aria-pressed={isSaved}
+                          aria-pressed={isBookmarkedPost}
                           className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-                            isSaved
+                            isBookmarkedPost
                               ? "border-indigo-200 bg-indigo-50 text-indigo-700"
                               : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
                           }`}
                         >
-                          {isSaved ? "★ Saved" : "☆ Save"}
+                          {isBookmarkedPost
+                            ? "★ Bookmarked"
+                            : "☆ Bookmark"}
                         </button>
                       </div>
 

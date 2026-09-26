@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -105,7 +104,9 @@ export default function PostDetailPage() {
     return (
       <main className="mx-auto min-h-screen max-w-3xl bg-slate-50 p-8 text-slate-900">
         <h1 className="text-2xl font-bold">Something went wrong</h1>
+
         <p className="mt-3 text-red-700">{error}</p>
+
         <Link
           href="/"
           className="mt-4 inline-block font-semibold text-indigo-700 hover:underline"
@@ -120,9 +121,11 @@ export default function PostDetailPage() {
     return (
       <main className="mx-auto min-h-screen max-w-3xl bg-slate-50 p-8 text-slate-900">
         <h1 className="text-2xl font-bold">Post not found</h1>
+
         <p className="mt-3 text-slate-700">
           This post may have been removed or does not exist.
         </p>
+
         <Link
           href="/"
           className="mt-4 inline-block font-semibold text-indigo-700 hover:underline"
@@ -148,7 +151,7 @@ export default function PostDetailPage() {
             href="/saved"
             className="font-semibold text-indigo-700 hover:underline"
           >
-            View Saved Posts →
+            View Bookmarks →
           </Link>
         </div>
 
@@ -185,7 +188,7 @@ export default function PostDetailPage() {
                   : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
-              {bookmarked ? "★ Saved" : "☆ Save Post"}
+              {bookmarked ? "★ Bookmarked" : "☆ Bookmark"}
             </button>
           </div>
 
@@ -211,7 +214,7 @@ export default function PostDetailPage() {
               type="button"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="rounded-lg border border-red-300 bg-white px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg border border-red-300 bg-white px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isDeleting ? "Deleting..." : "Delete Post"}
             </button>
