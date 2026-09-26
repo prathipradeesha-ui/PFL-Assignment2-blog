@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { filterPosts } from "@/lib/filterPosts";
 import { getBookmarks, toggleBookmark } from "@/lib/bookmarks";
@@ -429,11 +430,13 @@ export default function Home() {
                       aria-label={`View ${post.title}`}
                     >
 
-                      <img
+                      <Image
                         src={post.coverImage || fallbackCover}
                         alt={`Cover for ${post.title}`}
+                        width={900}
+                        height={352}
+                        sizes="(max-width: 768px) 100vw, 33vw"
                         className="h-44 w-full object-cover transition duration-300 hover:scale-105"
-                        loading="lazy"
                       />
 
                     </Link>

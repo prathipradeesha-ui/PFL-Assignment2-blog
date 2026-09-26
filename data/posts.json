@@ -1,13 +1,5 @@
 [
   {
-    "id": 1,
-    "title": "EcoTrack",
-    "description": "A student project focused on tracking environmental impact.",
-    "author": "Prathi",
-    "tag": "Environment",
-    "createdAt": "2026-09-20T10:00:00.000Z"
-  },
-  {
     "id": 2,
     "title": "AI Customer Support Assistant",
     "description": "A student project exploring AI-powered customer support.",
